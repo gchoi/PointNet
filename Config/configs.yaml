@@ -1,0 +1,82 @@
+#---------- OPTIONS ----------
+# data:
+#    data_path(string):             path to data root
+#    train_dir(string):             path to train dataset
+#    valid_dir(string):             path to validation dataset
+#    sample_data(string):           path to sample test data
+#
+# computing_device(string):         options for computing device: cpu/cuda/mps (Apple M1 Silicon)
+#
+# data_pipeline:
+#    num_workers(integer):          number of thread for data processing (only 0 is acceptable for Windows)
+#    pin_memory(boolean):           option to use pin memory
+#
+# train:
+#    from(string):                  option for training (scratch/checkpoint)
+#    pretrained_model(string):      path to the checkpoint file if train option 'from': 'checkpoint'
+#    num_epochs(integer):           number of epochs to train
+#    batch_size(integer):           train batch size
+#    seed(integer):                 torch seed for data shuffling
+#    shuffle(boolean):              data shuffling option (True/False)
+#
+# valid:
+#    batch_size(integer):           validation batch size
+#    shuffle(boolean):              data shuffling option (True/False)
+#
+# test:
+#    data_path(string):             path to test data
+#    trained_model_path(string):    path to the trained model to test
+#    batch_size(integer):           validation batch size
+#    shuffle(boolean):              data shuffling option (True/False)
+#
+# single_test:
+#    trained_model_path(string):    path to the trained model to test
+#    test_data_path(string):        path to the file to test
+#
+# outputs:
+#    root_path(string):             path to the root of outputs
+#    checkpoint_file_path(string):  path to the checkpoint files to save
+#    checkpoint_file_name(string):  checkpoint file name to save
+# -----------------------------
+
+data:
+    data_path: ./Data/ModelNet40
+    train_dir: train
+    valid_dir: test
+    test_dir: test
+    sample_data_viz: piano/test/piano_0232.off
+
+computing_device: cpu
+
+data_pipeline:
+    num_workers: 0
+    pin_memory: True
+
+train:
+    from: checkpoint
+    pretrained_model: ./pretrained/pretrained-modelnet10.pth
+    num_epochs: 1
+    batch_size: 32
+    seed: 123
+    shuffle: True
+
+valid:
+    batch_size: 64
+    shuffle: False
+
+batch_test:
+    data_path: ./Data/test/
+    trained_model_path: ./pretrained/pretrained.pth
+    batch_size: 64
+    shuffle: False
+
+single_test:
+    trained_model_path: ./pretrained/pretrained.pth
+    test_data_path: ./Data/ModelNet10/chair/test/chair_0891.off
+
+outputs:
+    root_path: ./Outputs
+    checkpoint_file_path: Models
+    checkpoint_file_ext: pth
+    figure_path: Figures
+    figure_file_ext: jpg

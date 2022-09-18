@@ -1,0 +1,172 @@
+"""
+@Description: Main script for training
+@Developed by: Alex Choi
+@Date: 07/20/2022
+@Contact: cinema4dr12@gmail.com
+"""
+
+# %% Import packages
+import os
+from logger import logging
+from datetime import datetime
+import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
+from utils import (
+    get_classes,
+    get_dataloader,
+    pointnet_loss,
+    pointnet_model,
+    train,
+    batch_test,
+    get_configurations,
+    get_device,
+    plot_confusion_matrix
+)
+
+
+def main() -> None:
+    datetime_now = datetime.now().strftime('%Y%m%d-%H%M%S')
+
+    # %% set configurations
+    YAML_CONFIG_PATH = "./Config/configs.yaml"
+    configs = get_configurations(
+        config_yaml_path=YAML_CONFIG_PATH,
+        datetime_now=datetime_now
+    )
+    device = get_device(compute_device=configs['computing_device'])
+
+    logging.info(
+        f"DATA INFO:\n"
+        f"\tData Root Path:                {configs['data']['data_path']}\n"
+        f"\tTrain Directory:               {configs['data']['train_dir']}\n"
+        f"\tValidation Directory:          {configs['data']['valid_dir']}\n"
+        f"\tTest Directory:                {configs['data']['valid_dir']}\n"
+        "\n"
+
+        f"Selected Computing Device:\t       {configs['computing_device']}\n"
+        "\n"
+
+        f"TRAINING INFO:\n"
+        f"\tTraining From:                 {configs['train']['from']}\n"
+        f"\tTotal Epoch:                   {configs['train']['num_epochs']}\n"
+        f"\tBatch Size:                    {configs['train']['batch_size']}\n"
+        "\n"
+
+        f"VALIDATION INFO:\n"
+        f"\tBatch Size:                    {configs['valid']['batch_size']}\n"
+        "\n"
+
+        f"TEST INFO:\n"
+        f"\tTrained Model Path:            {configs['batch_test']['trained_model_path']}\n"
+        f"\tBatch Size:                    {configs['batch_test']['batch_size']}\n"
+        "\n"
+
+        f"OUTPUT INFO:\n"
+        f"\tRoot Path:                     {configs['outputs']['root_path']}\n"
+        f"\tCheckpoint Path:               {configs['outputs']['checkpoint_file_path']}\n"
+        f"\tFigure Path:                   {configs['outputs']['figure_path']}\n"
+        "\n"
+    )
+
+    # %% initialize Tensorboard writer
+    experiment_name = '-'.join([
+        datetime_now,
+        'pointnet'
+    ])
+    log_dir = os.path.join('runs', experiment_name)
+    writer = SummaryWriter(log_dir)
+    writer.add_text('Configurations', f'<pre>{configs}</pre>')
+
+    # %% what kinds of classes do we have?
+    classes = get_classes(configs=configs)
+    logging.info(f"Classes: {classes}")
+
+
+    # %% data loaders
+    logging.info("Loading the data...")
+    train_loader = get_dataloader(
+        data_path=configs['data']['data_path'],
+        folder=configs['data']['train_dir'],
+        dataset_type="train",
+        batch_size=configs['train']['batch_size'],
+        shuffle=configs['train']['shuffle']
+    )
+    valid_loader = get_dataloader(
+        data_path=configs['data']['data_path'],
+        folder=configs['data']['valid_dir'],
+        dataset_type="valid",
+        batch_size=configs['valid']['batch_size'],
+        num_workers=configs['data_pipeline']['num_workers'],
+        pin_memory=configs['data_pipeline']['pin_memory'],
+        shuffle=configs['valid']['shuffle']
+    )
+
+    # %% load the model
+    logging.info("Getting PointNet model...")
+    num_classes = len(classes)
+    pointnet, optimizer, epochs_trained = pointnet_model(
+        num_classes=num_classes,
+        device=device,
+        mode='train',
+        train_from=configs['train']['from'],
+        model=configs['train']['pretrained_model']
+    )
+
+    # %% let's train
+    logging.info("Now training started...")
+    train(
+        epochs_trained=epochs_trained,
+        num_epochs=configs['train']['num_epochs'],
+        network=pointnet,
+        optimizer=optimizer,
+        loss_func=pointnet_loss,
+        checkpoint_file_path=configs['output_model_path'],
+        checkpoint_file_ext=configs['outputs']['checkpoint_file_ext'],
+        writer=writer,
+        train_loader=train_loader,
+        val_loader=valid_loader,
+        device=device
+    )
+    logging.info("Training DONE!")
+
+    # %% let's test the trained network
+    logging.info("Testing started...")
+    del pointnet
+    pointnet, optimizer, epochs_trained = pointnet_model(
+        device=device,
+        model=os.path.join(
+            configs['output_model_path'],
+            'best-model.pth'
+        )
+    )
+    cm = batch_test(
+        network=pointnet,
+        data_loader=valid_loader,
+        device=device
+    )
+    logging.info("Testing DONE!")
+
+    # %% plot the confusion matrix
+    plot_confusion_matrix(
+        cm=cm,
+        classes=list(classes.keys()),
+        output_fig_path=configs['output_fig_path'],
+        output_fig_ext=configs['outputs']['figure_file_ext'],
+        normalize=True,
+        title='Normalized Confusion matrix',
+        cmap=plt.cm.Blues
+    )
+
+    plot_confusion_matrix(
+        cm=cm,
+        classes=list(classes.keys()),
+        output_fig_path=configs['output_fig_path'],
+        output_fig_ext=configs['outputs']['figure_file_ext'],
+        normalize=False,
+        title='Unnormalized Confusion matrix',
+        cmap=plt.cm.Blues
+    )
+
+
+if __name__ == '__main__':
+    main()
