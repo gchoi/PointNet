@@ -16,7 +16,7 @@ This repository is to implement PointNet using [PyTorch](https://pytorch.org/) D
 ### Clone from the repository
 
 ```
-git clone https://git.jetbrains.space/alexchoi/personal-project/PointNet.git
+git clone https://github.com/gchoi/PointNet.git
 ```
 
 ### Install Python packages
