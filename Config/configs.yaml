@@ -23,8 +23,7 @@
 #    batch_size(integer):           validation batch size
 #    shuffle(boolean):              data shuffling option (True/False)
 #
-# test:
-#    data_path(string):             path to test data
+# batch_test:
 #    trained_model_path(string):    path to the trained model to test
 #    batch_size(integer):           validation batch size
 #    shuffle(boolean):              data shuffling option (True/False)
@@ -40,11 +39,11 @@
 # -----------------------------
 
 data:
-    data_path: ./Data/ModelNet40
+    data_path: ./Data/ModelNet10
     train_dir: train
     valid_dir: test
     test_dir: test
-    sample_data_viz: piano/test/piano_0232.off
+    sample_data_viz: sofa/test/sofa_0681.off
 
 computing_device: cpu
 
@@ -55,7 +54,7 @@ data_pipeline:
 train:
     from: checkpoint
     pretrained_model: ./pretrained/pretrained-modelnet10.pth
-    num_epochs: 1
+    num_epochs: 10
     batch_size: 32
     seed: 123
     shuffle: True
@@ -65,14 +64,13 @@ valid:
     shuffle: False
 
 batch_test:
-    data_path: ./Data/test/
-    trained_model_path: ./pretrained/pretrained.pth
+    trained_model_path: ./pretrained/pretrained-modelnet10.pth
     batch_size: 64
     shuffle: False
 
 single_test:
-    trained_model_path: ./pretrained/pretrained.pth
-    test_data_path: ./Data/ModelNet10/chair/test/chair_0891.off
+    trained_model_path: ./pretrained/pretrained-modelnet10.pth
+    test_data_path: ./Data/ModelNet10/sofa/test/sofa_0681.off
 
 outputs:
     root_path: ./Outputs

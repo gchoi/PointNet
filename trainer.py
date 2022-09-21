@@ -133,11 +133,11 @@ def main() -> None:
     logging.info("Testing started...")
     del pointnet
     pointnet, optimizer, epochs_trained = pointnet_model(
+        num_classes=num_classes,
         device=device,
-        model=os.path.join(
-            configs['output_model_path'],
-            'best-model.pth'
-        )
+        mode='test',
+        train_from='',
+        model=os.path.join(configs['output_model_path'], 'best-model.pth')
     )
     cm = batch_test(
         network=pointnet,
